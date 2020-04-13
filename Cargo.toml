@@ -10,3 +10,8 @@ edition = "2018"
 ggez = "0.5.1"
 cgmath = {version = "0.17.0", features=["mint"]}
 rand = "0.7.3"
+imgui = "0.3.0"
+imgui-gfx-renderer = "0.3.0"
+gfx = "0.18.2"
+gfx_core = "0.9.2"
+gfx_device_gl = "0.16.2"

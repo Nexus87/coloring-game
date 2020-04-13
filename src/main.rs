@@ -1,7 +1,9 @@
 //! A collection of semi-random shape and image drawing examples.
 
 mod field;
+mod gui;
 
+use gui::ImGuiWrapper;
 use field::Field;
 use ggez;
 use ggez::event;
@@ -10,18 +12,23 @@ use ggez::graphics::{DrawParam};
 use ggez::{Context, GameResult, input};
 use std::env;
 use std::path;
-use graphics::Text;
+use graphics::{TextFragment, Text, Scale};
+use event::{KeyCode, MouseButton, KeyMods};
 
 const RECT_SIZE: f32 = 50.0;
 struct MainState {
-    field: Field
+    field: Field,
+    gui: ImGuiWrapper,
+    hidpi_factor: f32
 }
 
 impl MainState {
     /// Load images and create meshes.
-    fn new(_: &mut Context) -> GameResult<MainState> {
+    fn new(ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
         let s = MainState {
-            field: Field::new(5, 5)
+            field: Field::new(5, 5),
+            gui: ImGuiWrapper::new(ctx),
+            hidpi_factor
         };
         Ok(s)
     }
@@ -53,7 +60,8 @@ impl event::EventHandler for MainState {
                         graphics::draw(ctx, &rect, DrawParam::default())?;
                     }
                     field::Cell::Empty(i) => {
-                        graphics::queue_text(ctx, &Text::new(i.to_string()), rect.point() , Some(graphics::WHITE));
+                        let text = TextFragment::new(i.to_string()).scale(Scale::uniform(50.0));
+                        graphics::queue_text(ctx, &Text::new(text), rect.point() , Some(graphics::WHITE));
                         let rect = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::stroke(1.0), rect, graphics::WHITE)?;
                         graphics::draw(ctx, &rect, DrawParam::default())?
                     }
@@ -61,9 +69,37 @@ impl event::EventHandler for MainState {
             }
         }
         graphics::draw_queued_text(ctx, DrawParam::default(), None, graphics::FilterMode::Linear)?;
+        self.gui.render(ctx, self.hidpi_factor);
         // Finished drawing, show it all on the screen!
         graphics::present(ctx)?;
         Ok(())
+    }
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+        self.gui.update_mouse_pos(x, y);
+    }
+
+    fn mouse_button_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        button: MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+        self.gui.update_mouse_down((
+            button == MouseButton::Left,
+            button == MouseButton::Right,
+            button == MouseButton::Middle,
+        ));
+    }
+
+    fn mouse_button_up_event(
+        &mut self,
+        _ctx: &mut Context,
+        _button: MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+        self.gui.update_mouse_down((false, false, false));
     }
 }
 
@@ -75,12 +111,12 @@ pub fn main() -> GameResult {
     } else {
         path::PathBuf::from("./resources")
     };
-
     let cb = ggez::ContextBuilder::new("drawing", "ggez").add_resource_path(resource_dir);
 
     let (ctx, events_loop) = &mut cb.build()?;
+    let hidpi_factor = events_loop.get_primary_monitor().get_hidpi_factor() as f32;
 
     println!("{}", graphics::renderer_info(ctx)?);
-    let state = &mut MainState::new(ctx).unwrap();
+    let state = &mut MainState::new(ctx, hidpi_factor).unwrap();
     event::run(ctx, events_loop, state)
 }
