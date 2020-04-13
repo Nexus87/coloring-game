@@ -1,6 +1,6 @@
 use rand::Rng;
 use ggez::graphics::{self, Color};
-use std::collections::HashMap;
+use std::{rc::Rc, collections::HashMap};
 
 pub enum Cell {
     Colored (Color),
@@ -10,7 +10,7 @@ pub struct Field {
     pub width: usize,
     pub height: usize,
     content: Vec<Cell>,
-    color_palette: HashMap<i32, Color>
+    pub color_palette: Rc<HashMap<i32, Color>>
 }
 
 impl Field {
@@ -32,7 +32,7 @@ impl Field {
             width,
             height,
             content,
-            color_palette
+            color_palette: Rc::new(color_palette)
         }
     }
 
@@ -45,7 +45,6 @@ impl Field {
         if row >= self.height || column >= self.width {
             return;
         }
-        dbg!(row, column);
         let idx = (row * self.width) + column;
         let cell = &self.content[idx];
         if let Cell::Empty(i) = cell{

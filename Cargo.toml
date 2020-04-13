@@ -1,5 +1,5 @@
 [package]
-name = "coloring"
+name = "coloring-game"
 version = "0.1.0"
 authors = ["Nexxuz0 <nexxuz0@googlemail.com>"]
 edition = "2018"

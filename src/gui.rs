@@ -7,7 +7,8 @@ use gfx_device_gl;
 use imgui::*;
 use imgui_gfx_renderer::*;
 
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant, rc::Rc};
+use graphics::Color;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -21,10 +22,11 @@ pub struct ImGuiWrapper {
   pub renderer: Renderer<gfx_core::format::Rgba8, gfx_device_gl::Resources>,
   last_frame: Instant,
   mouse_state: MouseState,
+  color_palette: Rc<HashMap<i32, Color>>
 }
 
 impl ImGuiWrapper {
-  pub fn new(ctx: &mut Context) -> Self {
+  pub fn new(ctx: &mut Context, color_palette: &Rc<HashMap<i32, Color>>) -> Self {
     // Create the imgui object
     let mut imgui = imgui::Context::create();
     let (factory, gfx_device, _, _, _) = graphics::gfx_objects(ctx);
@@ -58,6 +60,7 @@ impl ImGuiWrapper {
       renderer,
       last_frame: Instant::now(),
       mouse_state: MouseState::default(),
+      color_palette: color_palette.clone()
     }
   }
 
@@ -77,6 +80,7 @@ impl ImGuiWrapper {
     self.imgui.io_mut().delta_time = delta_s;
 
     let ui = self.imgui.frame();
+    let color_palette = &self.color_palette;
     // Various ui things
     {
       // Window
@@ -87,18 +91,23 @@ impl ImGuiWrapper {
         .size([draw_width - 10.0, 128.0], imgui::Condition::Once)
         .position([5.0, draw_height - 133.0], imgui::Condition::Always)
         .build(&ui, || {
-          let (c1, c2, c3, c4) =graphics::BLACK.to_rgba();
-          let color = ColorButton::new(im_str!("01"), [c1 as f32, c2 as f32, c3 as f32, c4 as f32])
-          .size([96.0, 96.0])
-          .build(&ui);
-          ui.same_line(0.0);
-
-          if color {
-            println!("color button clicked");
+          for (idx, color) in color_palette.iter() {
+            let (c1, c2, c3, c4) = color.to_rgba();
+            let idx= format!("{}\0", idx);
+            let idx = 
+            unsafe {
+              ImStr::from_utf8_with_nul_unchecked(idx.as_bytes())
+            };
+            let button = ColorButton::new(idx, [c1 as f32 / 255.0, c2 as f32 / 255.0, c3 as f32 /255.0, c4 as f32 / 255.0])
+            .tooltip(false)
+            .size([96.0, 96.0])
+            .build(&ui);
+            if button {
+              println!("color button clicked");
+            }
+            ui.same_line(0.0);
           }
-          if ui.button(im_str!("small button"), [32.0, 32.0]) {
-            println!("Small button clicked");
-          }
+        
         });
 
     }

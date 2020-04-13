@@ -13,7 +13,7 @@ use ggez::{Context, GameResult, input};
 use std::env;
 use std::path;
 use graphics::{TextFragment, Text, Scale};
-use event::{KeyCode, MouseButton, KeyMods};
+use event::{MouseButton};
 
 const RECT_SIZE: f32 = 50.0;
 struct MainState {
@@ -25,9 +25,12 @@ struct MainState {
 impl MainState {
     /// Load images and create meshes.
     fn new(ctx: &mut Context, hidpi_factor: f32) -> GameResult<MainState> {
+        let field = Field::new(5, 5);
+        let color_palette = &field.color_palette;
+        let gui = ImGuiWrapper::new(ctx, color_palette);
         let s = MainState {
-            field: Field::new(5, 5),
-            gui: ImGuiWrapper::new(ctx),
+            field,
+            gui,
             hidpi_factor
         };
         Ok(s)
